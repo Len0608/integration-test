@@ -1,0 +1,13 @@
+2026-09-04 09:02:45 - Hook script started
+2026-09-04 09:02:45 - Received stdin data: {"session_id":"2bc1fe54-2b5b-49a3-95a2-24fc74478c58","transcript_path":"/tmp/.claude/projects/-tmp-ue-eval-prometheus-monitoring/2bc1fe54-2b5b-49a3-95a2-24fc74478c58.jsonl","cwd":"/tmp/ue-eval-prometheus-monitoring","hook_event_name":"SessionStart","source":"startup"}
+
+2026-09-04 09:02:45 - Parsed event data: {
+  "session_id": "2bc1fe54-2b5b-49a3-95a2-24fc74478c58",
+  "transcript_path": "/tmp/.claude/projects/-tmp-ue-eval-prometheus-monitoring/2bc1fe54-2b5b-49a3-95a2-24fc74478c58.jsonl",
+  "cwd": "/tmp/ue-eval-prometheus-monitoring",
+  "hook_event_name": "SessionStart",
+  "source": "startup"
+}
+2026-09-04 09:02:45 - Event type: SessionStart
+2026-09-04 09:02:45 - Handling SessionStart
+2026-09-04 09:02:45 - Hook completed successfully

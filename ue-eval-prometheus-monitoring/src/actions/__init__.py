@@ -1,13 +1,14 @@
-"""Actions module - Business logic implementations."""
+"""Actions module — business logic implementations for the Prometheus Monitoring extension."""
 
 from actions.output import ActionOutput
+from actions.query_metric import query_metric
+from actions.check_alerts import check_alerts
 from manager import ExtensionManager
+
 extension_manager = ExtensionManager()
 
-# Import your action functions here
-# from actions.action_name import action_function
-
-# Map action names to functions
+# Maps the action field value (as supplied by UAC) to the action function.
 ACTION_MAPPER = {
-    # "action_name": action_function,
+    "Query Metric": query_metric,
+    "Check Alerts": check_alerts,
 }
