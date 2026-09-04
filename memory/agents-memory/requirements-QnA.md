@@ -87,7 +87,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Requests has a near-universal install base and familiar API. Using it directly against the Prometheus HTTP API avoids adding a specialized wrapper (prometheus-api-client) that doesn't fully cover all three required actions.
 - **Trade-offs**: Choosing requests over httpx means no async capability (not needed here) and slightly less fine-grained timeout control. Choosing requests over prometheus-api-client means slightly more code per API call, but full control over all endpoints.
 - **Requirement Impact**: None — no adjustments needed.
-- **User's Answer**: Option A — `requests==2.34.2` + `tabulate==0.10.0`
+- **User's Answer**: **Option A — `requests==2.34.2`** plus `tabulate==0.10.0`. Requests is the simplest, most stable, and most widely understood choice for synchronous Prometheus API calls. The Prometheus HTTP API is straightforward enough that no wrapper library is needed.
 
 ---
 
@@ -112,7 +112,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Query Metric is the foundational Prometheus capability. Check Alerts provides immediate visibility into the alerting state, which is the most common monitoring automation need. Get Targets is valuable but secondary.
 - **Trade-offs**: Deferring Get Targets means target health checks won't be available in v1. Adding it later is low-risk since it uses the same HTTP client and auth pattern.
 - **Requirement Impact**: Get Targets action (with `job` input and `target_health` output) will be deferred to a later version. The `target_health` output-only field will not be included in v1.
-- **User's Answer**: Option A — Query Metric + Check Alerts
+- **User's Answer**: **Option A — Query Metric + Check Alerts**. These two actions cover the most operationally important scenarios: "Is this metric above my threshold?" and "Is this alert currently firing?" Get Targets can be added in version 2.
 
 ---
 
@@ -131,7 +131,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: URL configuration is a commonly tuned parameter — it varies by task. The UAC architect notes recommend environment variables only for parameters "not commonly tuned" with "sensible defaults."
 - **Trade-offs**: Option A requires users to specify the URL in every task definition; Option B makes tasks simpler but inflexible. For production use cases where multiple Prometheus instances exist, Option A is significantly more useful.
 - **Requirement Impact**: Add a new required input field: `Prometheus URL` (Text Field). Suggested label: "Prometheus URL". Suggested hint: "Base URL of the Prometheus server. Example: http://prometheus.mycompany.com:9090"
-- **User's Answer**: Option A — Text Field in the task definition
+- **User's Answer**: **Option A — Text Field**. Most UAC deployments will have tasks pointing to different Prometheus endpoints (e.g., per environment), making per-task configuration the most flexible and transparent choice.
 
 ---
 
@@ -170,7 +170,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Range queries return time series data which is better suited for dashboards (Grafana) than automation tasks. For monitoring automation — checking if a metric exceeds a threshold, retrieving the latest value — instant queries are ideal and produce output small enough to fit in extension output fields.
 - **Trade-offs**: Choosing instant query means users cannot retrieve historical trend data through this action. If trend analysis is a genuine use case, Option C (both modes) would be needed, at the cost of additional form fields and implementation complexity.
 - **Requirement Impact**: If Option A is chosen, the `time_range` input can be replaced with an optional `evaluation_time` field (e.g., RFC 3339 timestamp or Unix timestamp, defaulting to "now"). If Option B or C, `time_range` becomes a duration string plus a `step` field.
-- **User's Answer**: Option A — Instant query only
+- **User's Answer**: **Option A — Instant query only**. For UAC automation workflows, instant queries answer the most common question: "What is the current value of this metric?" They produce compact output (one value per series), are simpler to implement, and avoid the need for a `step` parameter. The `time_range` requirement may have been intended as an optional evaluation time offset, or can be simplified away.
 
 ---
 
@@ -194,7 +194,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Simplicity. The vast majority of monitoring automation scenarios require "right now" metrics. Historical point-in-time queries are better served by dashboards or dedicated analytics tools.
 - **Trade-offs**: Users cannot perform historical point-in-time queries. If this use case emerges, the field can be added in a later version.
 - **Requirement Impact**: The `time_range` input field from the requirements can be removed. Final input for Query Metric: `promql_expression` (Text Field / Large Text Field) only.
-- **User's Answer**: Option A — Always use current server time
+- **User's Answer**: **Option A — Always use current server time**. For monitoring automation, the current state is almost always what matters. Adding an optional timestamp field increases complexity without clear benefit for the core use case.
 
 ---
 
@@ -229,7 +229,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: A choice field prevents invalid state values and guides users. Including "All" as a default makes the action useful immediately without requiring a state filter for general monitoring tasks.
 - **Trade-offs**: None significant. If the user always wants just firing alerts, they set the default to "Firing" in the task definition.
 - **Requirement Impact**: `alertname` maps to an optional Text Field. `state` maps to a Choice Field with values: "all" / "firing" / "pending". Labels: "Alert Name" (optional hint: "Filter by alert name. Leave empty to return all alerts") and "Alert State Filter" with default "All".
-- **User's Answer**: Option A — Choice field with "All", "Firing", "Pending". alertname is optional Text Field.
+- **User's Answer**: **Option A — Choice field with "All", "Firing", "Pending"**. The `alertname` should be an optional Text Field (empty = no filter). The `state` should be a standard Choice Field with these three values. Default state: "All".
 
 ---
 
@@ -307,7 +307,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Tabular data like metric labels+values and alert name+state+timestamp is significantly more readable as a table. The `tabulate` library is lightweight (pure-Python, no further dependencies), well-maintained, and specifically recommended by the architect notes.
 - **Trade-offs**: Adds `tabulate` as a dependency (lightweight, pure-Python, no concern). The alternative (key-value text) is less readable when results contain multiple series or alerts.
 - **Requirement Impact**: `tabulate==0.10.0` confirmed as a required dependency.
-- **User's Answer**: Option A — ASCII table using tabulate
+- **User's Answer**: **Option A — ASCII table using tabulate with `tablefmt="rounded_outline"`**, in alignment with UAC architect notes. `tabulate==0.10.0` is already included in the module selection.
 
 ---
 
@@ -332,7 +332,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: Start Small. Prometheus monitoring tasks typically query specific metrics or check specific alerts — result sets are small. Adding an output verbosity choice field in v1 adds form complexity without clear benefit for most use cases.
 - **Trade-offs**: No user control over output granularity in v1. If queries return many series (e.g., a PromQL expression matching 200 metric series), the cap truncates output with a note. Users needing the full dataset can use the Extension Output JSON.
 - **Requirement Impact**: Add `UE_MAX_OUTPUT_RECORDS` environment variable support (default: 100). When output is truncated, include a note in STDOUT and a `truncated` flag in Extension Output metadata.
-- **User's Answer**: Option A — Always include all results with `UE_MAX_OUTPUT_RECORDS` cap
+- **User's Answer**: **Option A — Always include all results with `UE_MAX_OUTPUT_RECORDS` cap**. For a monitoring extension with typically small result sets, a simple cap is sufficient. A verbosity control field can be added later if users request it.
 
 ---
 
@@ -359,7 +359,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: For monitoring automation, "no active alerts" is the healthy state, not an error. Treating empty results as failures would cause false-positive task failures in healthy environments. Users needing "at least one result" semantics can add a validation step in the workflow.
 - **Trade-offs**: Users who expect a specific metric to always exist won't get automatic failure notification — they'd need to add a workflow conditional check. This is a more explicit and maintainable pattern than a buried "fail on empty" flag.
 - **Requirement Impact**: `status_description` examples: `"Success: No active alerts matching the filter"`, `"Success: 0 metric series returned for the expression"`. Return code: 0 for all no-results scenarios.
-- **User's Answer**: Option A — Empty results = Success (exit code 0)
+- **User's Answer**: **Option A — Empty results = Success (exit code 0)**. The absence of firing alerts is typically the desired state in monitoring. Absence of metric data may indicate a scraping issue, but that is better detected via the target health check (v2 action) rather than treating empty PromQL results as failures.
 
 ---
 
@@ -390,7 +390,7 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: SSL verification is an agent-level (not task-level) setting — the same Prometheus server always has the same certificate. An environment variable is the right abstraction. A Boolean field would add form noise for the majority of users who never need to change it.
 - **Trade-offs**: No per-task SSL control. If tasks on the same agent target both a verified Prometheus and an unverified one, this approach won't work — Option B (Boolean field) would be needed in that case.
 - **Requirement Impact**: Add `UE_SSL_VERIFY` env var support. Document `REQUESTS_CA_BUNDLE` as the standard mechanism for custom CA bundles.
-- **User's Answer**: Option A — Verify by default; `UE_SSL_VERIFY=false` env var to disable
+- **User's Answer**: **Option A — Verify by default; `UE_SSL_VERIFY=false` env var to disable**. SSL verification is on by default for production safety. The `REQUESTS_CA_BUNDLE` env var handles the common internal CA scenario. `UE_SSL_VERIFY=false` provides an escape hatch for development environments.
 
 ---
 
@@ -411,4 +411,4 @@ The requirements provide a one-sentence description covering service name, authe
 - **Rationale**: A 30-second default is generous enough for complex PromQL queries while still protecting against hangs. Most users will never need to change it. Environment variable configuration avoids cluttering the task form with operational parameters.
 - **Trade-offs**: No per-task timeout granularity. If a specific query is expected to be slow (complex PromQL over months of data), the agent-level `UE_HTTP_TIMEOUT` value must be increased for all Prometheus tasks on that agent.
 - **Requirement Impact**: Add `UE_HTTP_TIMEOUT` env var support. Default: 30 seconds.
-- **User's Answer**: Option A — `UE_HTTP_TIMEOUT` environment variable with default 30 seconds
+- **User's Answer**: **Option A — `UE_HTTP_TIMEOUT` environment variable, default 30 seconds**. This aligns exactly with the UAC architect notes recommendation and is appropriate for a parameter that rarely needs tuning.
