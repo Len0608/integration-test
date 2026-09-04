@@ -1,0 +1,1 @@
+Prometheus monitoring UE. Auth: basic auth credential. Actions: Query Metric (promql_expression, time_range), Check Alerts (alertname, state), Get Targets (job). Output: metric_values, alert_state, target_health.
